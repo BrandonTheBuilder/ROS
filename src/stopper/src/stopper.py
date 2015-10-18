@@ -40,7 +40,6 @@ def laser_callback(scan):
 
     # import laser scan data
     rangeArray = scan.ranges
-    import IPython; IPython.embed()
     # if no obstacle is closer than one meter, move forward
     if min(rangeArray) < 2.0:
         command.angular.x = 0.0
