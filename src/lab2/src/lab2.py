@@ -47,7 +47,7 @@ def callback(scan,odom):
 
     #get goal x and y locations from the launch file
     goalX = rospy.get_param('lab2/goalX',0.0)
-    goalY = rospy.get_param('lab2,goalY',0.0)
+    goalY = rospy.get_param('lab2/goalY',0.0)
     
     # find current (x,y) position of robot based on odometry
     currentX = globalOdom.pose.pose.position.x
@@ -86,6 +86,7 @@ def callback(scan,odom):
 
     # for each laser scan
     for curScan in range(0, numScans):
+        currentLaserTheta = currentLaserTheta + angleIncrement  
         # curScan (current scan) loops from 0 to 
         # numScans (length of vector containing laser range data)
         # for each laser scan, the angle is currentLaserTheta,
@@ -98,7 +99,7 @@ def callback(scan,odom):
         # after you are done using one laser scan, update 
         # the current laser scan angle before the for loop
         # is incremented
-	currentLaserTheta = currentLaserTheta + angleIncrement	
+	   
     
     # based on the motion you want (found using goal location,
     # current location, and obstacle info), set the robot
