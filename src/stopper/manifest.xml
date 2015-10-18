@@ -1,0 +1,19 @@
+<package>
+  <description brief="Stopper code for ROB456.">
+
+    The nodes in this package allow for a robot to move in a straight line, and stop when it is less than 1m from an obstacle
+
+  </description>
+
+  <author>Mitchell Colby</author>
+  <license></license>
+  <review status="unreviewed" notes=""/>
+
+  <url></url>
+
+  <depend package="rospy"/>
+  <depend package="nav_msgs"/>
+  <depend package="tf"/>
+</package>
+
+

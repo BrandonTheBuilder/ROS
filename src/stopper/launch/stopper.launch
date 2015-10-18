@@ -1,0 +1,8 @@
+<launch>
+
+  <node pkg="stage_ros" type="stageros" name="simulator" args="$(find stopper)/worlds/manyDots.world" />
+
+  <node pkg="stopper" type="stopper.py" name="stopper" output="screen">
+  </node>
+
+</launch>
