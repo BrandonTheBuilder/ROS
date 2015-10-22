@@ -30,7 +30,7 @@ globalOdom = Odometry()
 # constants defined for attraction and repulsion
 ROBOT_CHARGE = -1
 OBSTACLE_CHARGE = -1
-GOAL_CHARGE = 100
+GOAL_CHARGE = 10
 DT = 0.01
 vx = 0.0
 vy = 0.0
@@ -125,12 +125,17 @@ def callback(scan,odom):
         global vx, vy, u, omega
         vx += fResult[0]*DT
         vy += fResult[1]*DT
+        print "location: ({}, {})".format(currentX, currentY)
+        print "Angle: {}".format(currentAngle)
+        print "Goal: ({}, {})".format(goalX, goalY)
+        print "ax: {}, ay: {}".format(fResult[0], fResult[1])
         print "vx: {}, vy: {}".format(vx, vy)
         Pd = [vx*DT, vy*DT]
+        print(Pd)
         u, omega = Util.unicycleTracking(Pd, u, omega, currentAngle)
     else:
-        command.linear.x = u;
-        command.angular.z = omega;
+        command.linear.x = u * .01;
+        command.angular.z = omega * .01;
     pub.publish(command)
 
 # main function call
