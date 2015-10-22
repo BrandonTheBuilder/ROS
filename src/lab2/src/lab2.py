@@ -13,6 +13,7 @@ import math
 import tf
 from tf.transformations import euler_from_quaternion
 import message_filters
+import Util
 
 # The laser scan message
 from sensor_msgs.msg import LaserScan
@@ -26,6 +27,14 @@ from geometry_msgs.msg import Twist
 # instantiate global variables "globalOdom"
 globalOdom = Odometry()
 
+# constants defined for attraction and repulsion
+ROBOT_CHARGE = -10
+OBSTACLE_CHARGE = -1
+GOAL_CHARGE = 10
+DT = .01
+vx = 0
+az = 0
+
 # method to control the robot
 def callback(scan,odom):
     # the odometry parameter should be global
@@ -38,9 +47,6 @@ def callback(scan,odom):
     # Fill in the fields.  Field values are unspecified 
     # until they are actually assigned. The Twist message 
     # holds linear and angular velocities.
-    # vx = command.linear.x
-    # az = command.angular.z
-    # import IPython; IPython.embed()
     command.linear.x = 0.0
     command.linear.y = 0.0
     command.linear.z = 0.0
@@ -89,41 +95,41 @@ def callback(scan,odom):
         #print 'theta: {0}'.format(currentAngle)
 
         # for each laser scan
-        rVector = [0,0]
+        fResult = [0,0]
         for curScan in range(0, numScans):
-            if distanceArray[curScan] != 30:
-                d = distanceArray[curScan] - 1 
-                # print 'd = {}, theta = {}, x = {}, y = {}'.format(
-                #     d, currentLaserTheta, d*math.cos(currentLaserTheta), d * math.sin(currentLaserTheta))
-                x = d*math.cos(currentLaserTheta)
-                y = d*math.sin(currentLaserTheta)
-                rVector[0] += -x
-                rVector[1] += -y
-                currentLaserTheta = currentLaserTheta + angleIncrement
+            d = distanceArray[curScan]
+            if d != 30:
+                r = Util.cartFromPolar(d, currentLaserTheta)
+                globR = Util.rotZTheta(r, -currentAngle)
+                f = Util.coulombForce(globR, 
+                    OBSTACLE_CHARGE * Util.scanAngleMod(currentLaserTheta), 
+                    ROBOT_CHARGE)
+                fResult[0] += f[0]
+                fResult[1] += f[1]
+            currentLaserTheta += angleIncrement
 
-        C = 1
-        P = 3
-    	goalVector = [(goalX - currentX) * math.cos(currentAngle) 
-                    - (goalY - currentY) * math.sin(currentAngle),
-                    (goalX - currentX) * math.sin(currentAngle) 
-                    + (goalY - currentY) * math.cos(currentAngle)]
-        print "goalVector {}".format(goalVector)
-        print "Rvector {}".format(rVector)
-        
-        rVector[0] += goalVector[0] * 10
-        rVector[1] += goalVector[1] * 10
-        rVector = [C/math.pow(rVector[0],3), C/math.pow(rVector[1],3)]
-        
+            
 
-        # based on the motion you want (found using goal location,
-        # current location, and obstacle info), set the robot
-        # motion
-        m = math.pow(math.pow(rVector[0],2) + math.pow(rVector[1],2), 0.5)
-        theta = math.atan2(rVector[1], rVector[0])
-        print(theta)
-        
-        command.linear.x = m/.01
-        command.angular.z = theta/0.1
+    	goal = [goalX-currentX , goalY-currentY]
+        mGoal = math.pow(math.pow(goal[0],2) + math.pow(goal[1],2),0.5)
+        unitGoal = [goal[0]/mGoal, goal[1]/mGoal]
+        goalForce = Util.coulombForce(unitGoal, GOAL_CHARGE, ROBOT_CHARGE)
+        print 'X {}'.format(currentX)
+        print 'Y {}'.format(currentY)
+        print 'goal {}'.format(goal)
+        fResult[0] += goalForce[0]
+        fResult[1] += goalForce[1]
+
+        deltaV = [fResult[0]*DT, fResult[1]*DT]
+        print 'DeltaV {}'.format(deltaV)
+        localDV = Util.rotZTheta(deltaV, currentAngle)
+        dm, omega = Util.polarFromCart(localDV)
+        global vx
+        global az
+        az += omega
+        if omega < 0.01:
+            command.linear.x = 5
+        command.angular.z = az
         pub.publish(command)
     else:
         command.linear.x = 0;
