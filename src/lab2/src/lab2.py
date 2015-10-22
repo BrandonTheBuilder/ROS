@@ -32,12 +32,17 @@ ROBOT_CHARGE = -1
 OBSTACLE_CHARGE = -1
 GOAL_CHARGE = 100
 DT = 0.01
-U = 0
+vx = 0.0
+vy = 0.0
+u = 0.0
+omega = 0.0
 
 # method to control the robot
 def callback(scan,odom):
     # the odometry parameter should be global
     global globalOdom
+    global vx
+    global omega
     globalOdom = odom
 
     # make a new twist message
@@ -46,12 +51,12 @@ def callback(scan,odom):
     # Fill in the fields.  Field values are unspecified 
     # until they are actually assigned. The Twist message 
     # holds linear and angular velocities.
-    # command.linear.x = 0.0
-    # command.linear.y = 0.0
-    # command.linear.z = 0.0
-    # command.angular.x = 0.0
-    # command.angular.y = 0.0
-    # command.angular.z = 0.0
+    command.linear.x = vx
+    command.linear.y = 0.0
+    command.linear.z = 0.0
+    command.angular.x = 0.0
+    command.angular.y = 0.0
+    command.angular.z = omega
 
     #get goal x and y locations from the launch file
     goalX = rospy.get_param('lab2/goalX',0.0)
@@ -112,32 +117,21 @@ def callback(scan,odom):
     	goal = [goalX-currentX , goalY-currentY]
         mGoal = math.pow(math.pow(goal[0],2) + math.pow(goal[1],2),0.5)
         unitGoal = [goal[0]/mGoal, goal[1]/mGoal]
-        goalForce = Util.coulombForce(unitGoal, GOAL_CHARGE, ROBOT_CHARGE)
-        print 'X {}'.format(currentX)
-        print 'Y {}'.format(currentY)
-        print 'goal {}'.format(goal)
+        goalForce = Util.coulombForce(goal, GOAL_CHARGE, ROBOT_CHARGE)
         fResult[0] += goalForce[0]
         fResult[1] += goalForce[1]
         print 'Force {}'.format(fResult)
-
-        # deltaV = [fResult[0]*DT, fResult[1]*DT]
-        # print 'DeltaV {}'.format(deltaV)
-        # localDV = Util.rotZTheta(deltaV, currentAngle)
-        # dm, omega = Util.polarFromCart(localDV)
-        # global vx
-        # global az
-        # vx += dm 
-        # az += omega
         print 'U {}'.format(command.linear.x)
-        vx,az = Util.undeadReckoning(fResult, command.linear.x, currentAngle)
-        global U
-        command.linear.x += vx * DT
-        command.angular.z = az
-        print 'command x {}, angular z {}'.format(command.linear.x, command.angular.z)
-        pub.publish(command)
+        global vx, vy, u, omega
+        vx += fResult[0]*DT
+        vy += fResult[1]*DT
+        print "vx: {}, vy: {}".format(vx, vy)
+        Pd = [vx*DT, vy*DT]
+        u, omega = Util.unicycleTracking(Pd, u, omega, currentAngle)
     else:
-        command.linear.x = 0;
-        command.angular.z = 0;
+        command.linear.x = u;
+        command.angular.z = omega;
+    pub.publish(command)
 
 # main function call
 if __name__ == "__main__":

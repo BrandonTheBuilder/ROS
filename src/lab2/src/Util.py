@@ -44,3 +44,21 @@ def undeadReckoning(a, u, phi):
     B = [[a[0]],[a[1]]]
     x = MM.Multiply(MM.Inv(A), B)
     return (x[0][0], x[1][0])
+
+
+def unicycleTracking(Pd, v, omega, theta):
+    # K1, K2, K3 are all positive constant gains
+    K1 = 1
+    K2 = 1
+    K3 = 1
+    a,thetaD = polarFromCart(Pd)
+    C = [[math.cos(thetaD-theta), 0],
+         [0,1]]
+    A = [[v],
+        [omega]]
+    B = (-K1*Pd[0],
+        K2*v*math.sin(thetaD-theta)/(thetaD-theta)*Pd[1]-K3*(thetaD-theta))
+
+    d = MM.Multiply(C, A)
+    # returns (v,omega) for traveling to the desired point
+    return (d[0][0]-B[0], d[1][0]-B[1])

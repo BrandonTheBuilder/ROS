@@ -44,5 +44,19 @@ class TestUtil(unittest.TestCase):
         u = 1
         phi = math.pi/6
         xDot, phiDot = Util.undeadReckoning(a, u, phi)
-        
+
+
+
+    def testUnicycleTracking(self):
+        theta = 0;
+        Pd = [2,2]
+        v = 0
+        omega = 0
+        v, omega = Util.unicycleTracking(Pd, v, omega, theta)
+        self.assertEquals(True, v>0 and omega>0)
+        Pd = [4,2]
+        theta += omega * 0.01
+        v, omega = Util.unicycleTracking(Pd, v, omega, theta)
+        # There is no good way of testing this because I don't know what the
+        # values should be
         
