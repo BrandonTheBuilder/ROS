@@ -2,6 +2,6 @@
   <node pkg="stage_ros" type="stageros" name="simulator" args="$(find lab2)/worlds/manyDots.world"/>
   <node pkg="lab2" type="lab2.py" name="lab2" output="screen">
 	<param name="goalX" value="10.0" />
-        <param name="goalY" value="20.0" />
+    <param name="goalY" value="20.0" />
   </node>
 </launch>

@@ -38,6 +38,9 @@ def callback(scan,odom):
     # Fill in the fields.  Field values are unspecified 
     # until they are actually assigned. The Twist message 
     # holds linear and angular velocities.
+    # vx = command.linear.x
+    # az = command.angular.z
+    # import IPython; IPython.embed()
     command.linear.x = 0.0
     command.linear.y = 0.0
     command.linear.z = 0.0
@@ -52,61 +55,79 @@ def callback(scan,odom):
     # find current (x,y) position of robot based on odometry
     currentX = globalOdom.pose.pose.position.x
     currentY = globalOdom.pose.pose.position.y
+    if goalX != currentX and goalY != currentY:
 
-    # find current orientation of robot based on odometry (quaternion coordinates)
-    xOr = globalOdom.pose.pose.orientation.x
-    yOr = globalOdom.pose.pose.orientation.y
-    zOr = globalOdom.pose.pose.orientation.z
-    wOr = globalOdom.pose.pose.orientation.w
+        # find current orientation of robot based on odometry (quaternion coordinates)
+        xOr = globalOdom.pose.pose.orientation.x
+        yOr = globalOdom.pose.pose.orientation.y
+        zOr = globalOdom.pose.pose.orientation.z
+        wOr = globalOdom.pose.pose.orientation.w
 
-    # find orientation of robot (Euler coordinates)
-    (roll, pitch, yaw) = euler_from_quaternion([xOr, yOr, zOr, wOr])
+        # find orientation of robot (Euler coordinates)
+        (roll, pitch, yaw) = euler_from_quaternion([xOr, yOr, zOr, wOr])
 
-    # find currentAngle of robot (equivalent to yaw)
-    # now that you have yaw, the robot's pose is completely defined by (currentX, currentY, currentAngle)
-    currentAngle = yaw
+        # find currentAngle of robot (equivalent to yaw)
+        # now that you have yaw, the robot's pose is completely defined by (currentX, currentY, currentAngle)
+        currentAngle = yaw
 
-    # find laser scanner properties (min scan angle, max scan angle, scan angle increment)
-    maxAngle = scan.angle_max
-    minAngle = scan.angle_min
-    angleIncrement = scan.angle_increment
+        # find laser scanner properties (min scan angle, max scan angle, scan angle increment)
+        maxAngle = scan.angle_max
+        minAngle = scan.angle_min
+        angleIncrement = scan.angle_increment
 
-    # find current laser angle, max scan length, distance array for all scans, and number of laser scans
-    currentLaserTheta = minAngle
-    maxScanLength = scan.range_max 
-    distanceArray = scan.ranges
-    numScans = len(distanceArray)
-   
-    # the code below (currently commented) shows how 
-    # you can print variables to the terminal (may 
-    # be useful for debugging)
-    #print 'x: {0}'.format(currentX)
-    #print 'y: {0}'.format(currentY)
-    #print 'theta: {0}'.format(currentAngle)
+        # find current laser angle, max scan length, distance array for all scans, and number of laser scans
+        currentLaserTheta = minAngle
+        maxScanLength = scan.range_max 
+        distanceArray = scan.ranges
+        numScans = len(distanceArray)
+       
+        # the code below (currently commented) shows how 
+        # you can print variables to the terminal (may 
+        # be useful for debugging)
+        #print 'x: {0}'.format(currentX)
+        #print 'y: {0}'.format(currentY)
+        #print 'theta: {0}'.format(currentAngle)
 
-    # for each laser scan
-    for curScan in range(0, numScans):
-        currentLaserTheta = currentLaserTheta + angleIncrement  
-        # curScan (current scan) loops from 0 to 
-        # numScans (length of vector containing laser range data)
-        # for each laser scan, the angle is currentLaserTheta,
-        # and the range is distanceArray[curScan]
-        # ............................................
-        # ..... insert code here which uses...........
-        # ..... distanceArray[curScan] and ...........
-        # ......... currentLaserTheta.................
-        # ............................................
-        # after you are done using one laser scan, update 
-        # the current laser scan angle before the for loop
-        # is incremented
-	   
-    
-    # based on the motion you want (found using goal location,
-    # current location, and obstacle info), set the robot
-    # motion
-    command.linear.x = 0.0
-    command.angular.z = 0.0
-    pub.publish(command)
+        # for each laser scan
+        rVector = [0,0]
+        for curScan in range(0, numScans):
+            if distanceArray[curScan] != 30:
+                d = distanceArray[curScan] - 1 
+                # print 'd = {}, theta = {}, x = {}, y = {}'.format(
+                #     d, currentLaserTheta, d*math.cos(currentLaserTheta), d * math.sin(currentLaserTheta))
+                x = d*math.cos(currentLaserTheta)
+                y = d*math.sin(currentLaserTheta)
+                rVector[0] += -x
+                rVector[1] += -y
+                currentLaserTheta = currentLaserTheta + angleIncrement
+
+        C = 1
+        P = 3
+    	goalVector = [(goalX - currentX) * math.cos(currentAngle) 
+                    - (goalY - currentY) * math.sin(currentAngle),
+                    (goalX - currentX) * math.sin(currentAngle) 
+                    + (goalY - currentY) * math.cos(currentAngle)]
+        print "goalVector {}".format(goalVector)
+        print "Rvector {}".format(rVector)
+        
+        rVector[0] += goalVector[0] * 10
+        rVector[1] += goalVector[1] * 10
+        rVector = [C/math.pow(rVector[0],3), C/math.pow(rVector[1],3)]
+        
+
+        # based on the motion you want (found using goal location,
+        # current location, and obstacle info), set the robot
+        # motion
+        m = math.pow(math.pow(rVector[0],2) + math.pow(rVector[1],2), 0.5)
+        theta = math.atan2(rVector[1], rVector[0])
+        print(theta)
+        
+        command.linear.x = m/.01
+        command.angular.z = theta/0.1
+        pub.publish(command)
+    else:
+        command.linear.x = 0;
+        command.angular.z = 0;
 
 # main function call
 if __name__ == "__main__":
