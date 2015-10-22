@@ -37,4 +37,12 @@ class TestUtil(unittest.TestCase):
         self.assertEquals(True, f[0] < 0 and f[1] < 0)
         f = Util.coulombForce(r, GC, RC)
         self.assertEquals(True, f[0] > 0 and f[1] > 0)
+
+
+    def testUndeadReckoning(self):
+        a = [3,4]
+        u = 1
+        phi = math.pi/6
+        xDot, phiDot = Util.undeadReckoning(a, u, phi)
+        
         

@@ -1,4 +1,5 @@
 import math
+import MatrixMath as MM
 
 def rotZTheta(v, theta):
     x = v[0]*math.cos(theta) - v[1]*math.sin(theta)
@@ -28,3 +29,18 @@ def coulombForce(r, q1, q2):
 
 def scanAngleMod(theta):
     return math.cos(theta/2)
+
+
+def undeadReckoning(a, u, phi):
+    
+    if u == 0:
+        ra = rotZTheta(a, phi)
+        d, theta = polarFromCart(a)
+        return (a[0]/math.cos(phi), 5)
+    A = [[math.cos(phi), -u*math.sin(phi)],
+        [math.sin(phi), u*math.cos(phi)]]
+    print(A)
+    print phi
+    B = [[a[0]],[a[1]]]
+    x = MM.Multiply(MM.Inv(A), B)
+    return (x[0][0], x[1][0])

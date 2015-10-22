@@ -28,12 +28,11 @@ from geometry_msgs.msg import Twist
 globalOdom = Odometry()
 
 # constants defined for attraction and repulsion
-ROBOT_CHARGE = -10
+ROBOT_CHARGE = -1
 OBSTACLE_CHARGE = -1
-GOAL_CHARGE = 10
-DT = .01
-vx = 0
-az = 0
+GOAL_CHARGE = 100
+DT = 0.01
+U = 0
 
 # method to control the robot
 def callback(scan,odom):
@@ -47,12 +46,12 @@ def callback(scan,odom):
     # Fill in the fields.  Field values are unspecified 
     # until they are actually assigned. The Twist message 
     # holds linear and angular velocities.
-    command.linear.x = 0.0
-    command.linear.y = 0.0
-    command.linear.z = 0.0
-    command.angular.x = 0.0
-    command.angular.y = 0.0
-    command.angular.z = 0.0
+    # command.linear.x = 0.0
+    # command.linear.y = 0.0
+    # command.linear.z = 0.0
+    # command.angular.x = 0.0
+    # command.angular.y = 0.0
+    # command.angular.z = 0.0
 
     #get goal x and y locations from the launch file
     goalX = rospy.get_param('lab2/goalX',0.0)
@@ -119,17 +118,22 @@ def callback(scan,odom):
         print 'goal {}'.format(goal)
         fResult[0] += goalForce[0]
         fResult[1] += goalForce[1]
+        print 'Force {}'.format(fResult)
 
-        deltaV = [fResult[0]*DT, fResult[1]*DT]
-        print 'DeltaV {}'.format(deltaV)
-        localDV = Util.rotZTheta(deltaV, currentAngle)
-        dm, omega = Util.polarFromCart(localDV)
-        global vx
-        global az
-        az += omega
-        if omega < 0.01:
-            command.linear.x = 5
+        # deltaV = [fResult[0]*DT, fResult[1]*DT]
+        # print 'DeltaV {}'.format(deltaV)
+        # localDV = Util.rotZTheta(deltaV, currentAngle)
+        # dm, omega = Util.polarFromCart(localDV)
+        # global vx
+        # global az
+        # vx += dm 
+        # az += omega
+        print 'U {}'.format(command.linear.x)
+        vx,az = Util.undeadReckoning(fResult, command.linear.x, currentAngle)
+        global U
+        command.linear.x += vx * DT
         command.angular.z = az
+        print 'command x {}, angular z {}'.format(command.linear.x, command.angular.z)
         pub.publish(command)
     else:
         command.linear.x = 0;
