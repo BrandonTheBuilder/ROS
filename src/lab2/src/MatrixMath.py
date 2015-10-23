@@ -106,12 +106,3 @@ def isMatrix(matrix):
     except TypeError:
         raise TypeError('A matrix is input in the form of a list of lists [[a,b],[c,d]]')
             
-                
-                
-
-
-                
-    
-    
-        
-                
