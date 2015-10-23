@@ -13,6 +13,7 @@ import math
 import tf
 from tf.transformations import euler_from_quaternion
 import message_filters
+import Util
 
 # The laser scan message
 from sensor_msgs.msg import LaserScan
@@ -47,7 +48,7 @@ def callback(scan,odom):
 
     #get goal x and y locations from the launch file
     goalX = rospy.get_param('lab2/goalX',0.0)
-    goalY = rospy.get_param('lab2,goalY',0.0)
+    goalY = rospy.get_param('lab2/goalY',0.0)
     
     # find current (x,y) position of robot based on odometry
     currentX = globalOdom.pose.pose.position.x
@@ -85,7 +86,26 @@ def callback(scan,odom):
     #print 'theta: {0}'.format(currentAngle)
 
     # for each laser scan
+    goal = [goalX-currentX, goalY-currentY]
+    
+
+    goalDist, goalAngle = Util.polarFromCart(goal)
+    
+    print "location {}, {}".format(currentX, currentY)
+    print "orientation {}".format(currentAngle)
+    print "goal Location {},{}".format(goalX, goalY)
+    print "Goal {}, {}".format(goalDist, goalAngle)
+
+
     for curScan in range(0, numScans):
+        d = distanceArray[curScan]
+        if d < 2 and abs(currentLaserTheta) < 1.445:
+            goalAngle = currentAngle+math.acos(0.25/d)
+            command.angular.z = (goalAngle - currentAngle)
+            command.linear.x = 1
+            pub.publish(command)
+            return
+
         # curScan (current scan) loops from 0 to 
         # numScans (length of vector containing laser range data)
         # for each laser scan, the angle is currentLaserTheta,
@@ -98,13 +118,23 @@ def callback(scan,odom):
         # after you are done using one laser scan, update 
         # the current laser scan angle before the for loop
         # is incremented
-	currentLaserTheta = currentLaserTheta + angleIncrement	
-    
+        currentLaserTheta = currentLaserTheta + angleIncrement	
+
+    print 'GoalAngle {}'.format(goalAngle)
+    if abs(goalAngle - currentAngle) > 0.001:
+        command.angular.z = (goalAngle - currentAngle)
+        pub.publish(command)
+        return
+    if goalDist > 0.001:
+        command.linear.x = goalDist*0.1
+        pub.publish(command)
+        return
     # based on the motion you want (found using goal location,
     # current location, and obstacle info), set the robot
     # motion
-    command.linear.x = 0.0
-    command.angular.z = 0.0
+    command.linear.x = 0
+    import IPython; IPython.embed()
+    
     pub.publish(command)
 
 # main function call
@@ -127,4 +157,6 @@ if __name__ == "__main__":
 
     # Turn control over to ROS
     rospy.spin()
+
+
 
