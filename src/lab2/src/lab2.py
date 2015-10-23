@@ -13,7 +13,6 @@ import math
 import tf
 from tf.transformations import euler_from_quaternion
 import message_filters
-import Util
 
 # The laser scan message
 from sensor_msgs.msg import LaserScan
@@ -26,6 +25,11 @@ from geometry_msgs.msg import Twist
 
 # instantiate global variables "globalOdom"
 globalOdom = Odometry()
+
+def polarFromCart(v):
+    d = math.pow(math.pow(v[0],2)+math.pow(v[1],2), 0.5)
+    theta = math.atan2(v[1], v[0])
+    return (d, theta)
 
 # method to control the robot
 def callback(scan,odom):
@@ -89,7 +93,7 @@ def callback(scan,odom):
     goal = [goalX-currentX, goalY-currentY]
     
 
-    goalDist, goalAngle = Util.polarFromCart(goal)
+    goalDist, goalAngle = polarFromCart(goal)
     
     print "location {}, {}".format(currentX, currentY)
     print "orientation {}".format(currentAngle)
@@ -100,40 +104,25 @@ def callback(scan,odom):
     for curScan in range(0, numScans):
         d = distanceArray[curScan]
         if d < 2 and abs(currentLaserTheta) < 1.445:
-            goalAngle = currentAngle+math.acos(0.25/d)
+            goalAngle = currentAngle-math.acos(0.25/d)*currentLaserTheta/abs(currentLaserTheta)
             command.angular.z = (goalAngle - currentAngle)
             command.linear.x = 1
             pub.publish(command)
             return
-
-        # curScan (current scan) loops from 0 to 
-        # numScans (length of vector containing laser range data)
-        # for each laser scan, the angle is currentLaserTheta,
-        # and the range is distanceArray[curScan]
-        # ............................................
-        # ..... insert code here which uses...........
-        # ..... distanceArray[curScan] and ...........
-        # ......... currentLaserTheta.................
-        # ............................................
-        # after you are done using one laser scan, update 
-        # the current laser scan angle before the for loop
-        # is incremented
         currentLaserTheta = currentLaserTheta + angleIncrement	
 
     print 'GoalAngle {}'.format(goalAngle)
-    if abs(goalAngle - currentAngle) > 0.001:
+    if abs(goalAngle - currentAngle) > 0.001 or goalDist > 0.001:
+        command.linear.x = goalDist*0.1
         command.angular.z = (goalAngle - currentAngle)
         pub.publish(command)
         return
-    if goalDist > 0.001:
-        command.linear.x = goalDist*0.1
-        pub.publish(command)
-        return
+
     # based on the motion you want (found using goal location,
     # current location, and obstacle info), set the robot
     # motion
     command.linear.x = 0
-    import IPython; IPython.embed()
+    
     
     pub.publish(command)
 

@@ -1,11 +1,12 @@
 <package>
   <description brief="Assignment 2">
-    brief description
+    A motha f'n robot that gets places!
+    Robot that moves to a goal location while avoiding obstacles.
   </description>
 
-  <author>your name</author>
+  <author>Loren Arthur, Samuel Monroe</author>
   <license></license>
-  <review status="unreviewed" notes=""/>
+  <review status="unreviewed" notes="Robot must start further than 2m from any obstacles"/>
 
   <url></url>
 

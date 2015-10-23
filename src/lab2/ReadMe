@@ -1,0 +1,9 @@
+Instructions to run:
+* From your catkin workspace run
+    <source devel/setup.bash> 
+    <roslaunch lab2 lab2.launch>
+
+* Algorithm
+    The robot finds the angle and distance it needs to travel to find it's goal.
+    If there are any obstacles within 2m that the robot will run into if traveling
+    forward it will rotate away then continue towards it's goal. 
