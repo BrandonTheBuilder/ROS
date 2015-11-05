@@ -7,7 +7,7 @@
 # writing.  ROS will use whatever manifest you specify, even if it's
 # not in the current package.  This can be *really* hard to debug.
 
-import roslib; roslib.load_manifest('lab2')
+import roslib; roslib.load_manifest('lab3')
 import rospy
 import math
 import tf
@@ -26,10 +26,8 @@ from geometry_msgs.msg import Twist
 # instantiate global variables "globalOdom"
 globalOdom = Odometry()
 
-def polarFromCart(v):
-    d = math.pow(math.pow(v[0],2)+math.pow(v[1],2), 0.5)
-    theta = math.atan2(v[1], v[0])
-    return (d, theta)
+# global pi
+pi = math.pi
 
 # method to control the robot
 def callback(scan,odom):
@@ -49,10 +47,6 @@ def callback(scan,odom):
     command.angular.x = 0.0
     command.angular.y = 0.0
     command.angular.z = 0.0
-
-    #get goal x and y locations from the launch file
-    goalX = rospy.get_param('lab2/goalX',0.0)
-    goalY = rospy.get_param('lab2/goalY',0.0)
     
     # find current (x,y) position of robot based on odometry
     currentX = globalOdom.pose.pose.position.x
@@ -90,48 +84,29 @@ def callback(scan,odom):
     #print 'theta: {0}'.format(currentAngle)
 
     # for each laser scan
-    goal = [goalX-currentX, goalY-currentY]
-    
-
-    goalDist, goalAngle = polarFromCart(goal)
-    
-    print "location {}, {}".format(currentX, currentY)
-    print "orientation {}".format(currentAngle)
-    print "goal Location {},{}".format(goalX, goalY)
-    print "Goal {}, {}".format(goalDist, goalAngle)
-
-
+    distThreshold = 2.0   # obstacle avoidance threshold
+    minScan = distanceArray[0]
+    velocity = 5.0
+    bearing = 0.0
     for curScan in range(0, numScans):
-        d = distanceArray[curScan]
-        if d < 2 and abs(currentLaserTheta) < 1.445:
-            goalAngle = currentAngle-math.acos(0.25/d)*currentLaserTheta/abs(currentLaserTheta)
-            command.angular.z = (goalAngle - currentAngle)
-            command.linear.x = 1
-            pub.publish(command)
-            return
-        currentLaserTheta = currentLaserTheta + angleIncrement	
-
-    print 'GoalAngle {}'.format(goalAngle)
-    if abs(goalAngle - currentAngle) > 0.001 or goalDist > 0.001:
-        command.linear.x = goalDist*0.1
-        command.angular.z = (goalAngle - currentAngle)
-        pub.publish(command)
-        return
-
-    # based on the motion you want (found using goal location,
-    # current location, and obstacle info), set the robot
-    # motion
-    command.linear.x = 0
-    command.angular.z = 0
+      if currentLaserTheta > -pi/2 and currentLaserTheta < 0 and distanceArray[curScan] < distThreshold:
+        bearing = 1.0 # turn left
+      elif currentLaserTheta >= 0 and currentLaserTheta < pi/2 and distanceArray[curScan] < distThreshold:
+        bearing = -1.0 # turn right
+      if distanceArray[curScan] < minScan:
+        minScan = distanceArray[curScan]
+      currentLaserTheta = currentLaserTheta + angleIncrement
     
-    
-    
+    # set the robot motion
+    # commanded velocities
+    command.linear.x = velocity*min(1.0,minScan/distThreshold) # slow down if within threshold distance
+    command.angular.z = bearing
     pub.publish(command)
 
 # main function call
 if __name__ == "__main__":
     # Initialize the node
-    rospy.init_node('lab2', log_level=rospy.DEBUG)
+    rospy.init_node('lab3', log_level=rospy.DEBUG)
 
     # subscribe to laser scan message
     sub = message_filters.Subscriber('base_scan', LaserScan)
@@ -148,3 +123,4 @@ if __name__ == "__main__":
 
     # Turn control over to ROS
     rospy.spin()
+

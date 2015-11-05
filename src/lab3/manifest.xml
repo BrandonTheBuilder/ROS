@@ -1,0 +1,18 @@
+<package>
+  <description brief="Assignment 3">
+    brief description
+  </description>
+
+  <author>your name</author>
+  <license></license>
+  <review status="unreviewed" notes=""/>
+
+  <url></url>
+
+  <depend package="rospy"/>
+  <depend package="nav_msgs"/>
+  <depend package="tf"/>
+  <depend package="gmapping"/>
+</package>
+
+
