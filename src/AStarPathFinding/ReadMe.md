@@ -11,7 +11,9 @@ Loren Arthur, Samuel Monroe
 
 ## Notes:
 * If pygame doesn't run there is an image of the output included
+
 ## Coordinate Output
+
 Coordinates (1,1), g_score: 0
 Coordinates (2,1), g_score: 1
 Coordinates (3,1), g_score: 2
