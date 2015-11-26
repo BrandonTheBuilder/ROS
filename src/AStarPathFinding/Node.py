@@ -1,3 +1,4 @@
+import math 
 
 __all__ = ['Node']
 
@@ -20,7 +21,8 @@ class Node:
     def costEstimate(self, goal):
         xDiff = goal[0]-self.index[0]
         yDiff = goal[1]-self.index[1]
-        return xDiff+yDiff #Return the manhattan heuristic
+        # Manhattan heuristic xDiff + yDiff
+        return math.sqrt(math.pow(xDiff,2)+math.pow(yDiff,2)) #Return the Euclideian heuristic
 
 
     def update(self, node):
